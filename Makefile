@@ -6,16 +6,16 @@
 #    By: inaranjo <inaranjo@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/04/25 15:53:11 by inaranjo          #+#    #+#              #
-#    Updated: 2023/05/10 16:10:15 by malleman         ###   ########.fr        #
+#    Updated: 2023/05/29 13:31:59 by malleman         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
-NAME = minishell
+NAME = pipex
 
 LIBFT = $(LIBFT_PATH)libft.a
 LIBFT_PATH = libft/
 
-SRC = main.c
+SRC = main.c execution.c
 
 CC = gcc
 
