@@ -11,54 +11,76 @@
 /* ************************************************************************** */
 #include "pipex.h"
 
-void	first_process(char **av, char **envp, int *fd)
-{
-	int r_file;
-
-	r_file = open(av[1], O_RDONLY, 0640);
-	if (r_file == -1)
-		error();
-	dup2(fd[1], STDIN_FILENO);
-	dup2(r_file, STDOUT_FILENO);
-	close(fd[0]);
-	start_execution(av[2], envp);
-}
-
-void	second_process(char **av, char **envp, int *fd)
-{
-	int w_file;
-	
-	w_file = open(av[4], O_WRONLY | O_CREAT | O_TRUNC, 0640);
-	if (w_file == -1)
-		error();
-	dup2(fd[0], STDIN_FILENO);
-	dup2(w_file, STDOUT_FILENO);
-	close(fd[1]);
-	start_execution(av[3], envp);
-}
-
-
-int	main(int ac, char **av, char **envp)
+void	child_process(char *av, char **envp)
 {
 	int		fd[2];
 	pid_t	pid;
-
-	if (ac == 5)
+	
+	if (pipe(fd) == -1)
+		error();
+	pid = fork();
+	if (pid == -1)
+		error();
+	if (pid == 0)
 	{
-		if (pipe(fd) == -1)
-			error();
-		pid = fork();
-		if (pid == -1)
-			error();
-		else if (pid == 0)
-			first_process(av, envp, fd);
-		waitpid(pid, NULL, 0);
-		second_process(av, envp, fd);
-		return (0);
+		close(fd[0]);
+		dup2(fd[1], STDOUT_FILENO);
+		start_execution(av, envp);
 	}
-	else 
+	else
 	{
-		ft_printf("Error: Arguments invalides\n");
+		close(fd[1]);
+		dup2(fd[0], STDIN_FILENO);
+		waitpid(pid, NULL, 0);
+	}
+	
+}
+
+int	file_access(char *av, int access)
+{
+	int	file;
+
+	file = 0;
+	if (access == 0)
+		file = open(av, O_RDONLY, 0777);
+	else if (access == 1)
+		file = open(av, O_WRONLY | O_CREAT | O_TRUNC, 0640);
+	else if (access == 2)
+		file = open(av, O_WRONLY | O_CREAT | O_APPEND, 0640);
+	if (file == -1)
+		error();
+	return (file);
+}
+
+int	main(int ac, char **av, char **envp)
+{
+	int		in_file;
+	int		out_file;
+	int		cmd;
+
+	if (ac >= 5)
+	{
+		if (ft_strncmp(av[1], "here_doc", 8) == 0)
+		{
+			cmd = 3;
+			out_file = file_access(av[ac - 1], 2);
+		}
+		else
+		{
+			cmd = 2;
+			out_file = file_access(av[ac - 1], 1);
+			in_file = file_access(av[1], 0);
+			dup2(in_file, STDIN_FILENO);
+
+		}
+		while (cmd < ac - 2)
+			child_process(av[cmd++], envp);
+		dup2(out_file, STDOUT_FILENO);
+		start_execution(av[ac - 2], envp);
+	}
+	else
+	{
+		ft_printf("Nombre d'arguments incorrects\n");
 		exit (1);
 	}
 	return (0);
